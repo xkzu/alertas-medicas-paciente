@@ -51,8 +51,20 @@ public class PatientServiceImpl implements PatientService {
         patientRepository.deleteById(id);
     }
 
+    @Override
+    public List<PatientDTO> getAllPatientsAsDTOByIdDoctor(long idDoctor) {
+        return getAllPatientsByIdDoctor(idDoctor)
+                .stream()
+                .map(PatientMapper::toDTO)
+                .toList();
+    }
+
     private List<Patient> getAllPatients() {
         return (List<Patient>) patientRepository.findAll();
+    }
+
+    private List<Patient> getAllPatientsByIdDoctor(long idDoctor) {
+        return patientRepository.findAllByIdDoctor(idDoctor);
     }
 
     private Patient getPatientById(Long id) {

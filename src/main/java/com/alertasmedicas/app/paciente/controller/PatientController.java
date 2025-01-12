@@ -41,6 +41,19 @@ public class PatientController {
         }
     }
 
+    @GetMapping("/getPatients/{idDoctor}")
+    public ResponseEntity<List<PatientDTO>> getPatientsByDoctor(@PathVariable long idDoctor) {
+        log.info("Obteniendo todos los pacientes asignados al doctor con id {}", idDoctor);
+        try {
+            List<PatientDTO> patients = patientService.getAllPatientsAsDTOByIdDoctor(idDoctor);
+            log.info("Lista de pacientes asignados al doctor obtenida exitosamente. Total: {} pacientes.", patients.size());
+            return ResponseEntity.ok(patients);
+        } catch (Exception e) {
+            log.error("Error al obtener todos los pacientes asignados al medico: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     @GetMapping("/getPatient/{id}")
     public ResponseEntity<PatientDTO> getPatient(@PathVariable long id) {
         log.info("Obteniendo paciente con id: {}", id);
@@ -94,4 +107,5 @@ public class PatientController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
 }
