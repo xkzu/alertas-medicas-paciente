@@ -1,26 +1,45 @@
-# Dockerfile para servicios Java
-FROM maven:3.9.6-amazoncorretto-21
+# ==========================
+# Fase 1: Build Stage
+# ==========================
+FROM eclipse-temurin:21-jdk AS buildstage
+
+# Instalar Maven para la compilación
+RUN apt-get update && \
+    apt-get install -y maven && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copiar el pom.xml y los archivos fuente
+# Copiar el archivo de configuración de Maven (pom.xml) primero para aprovechar el caché
 COPY pom.xml .
-COPY src ./src
+RUN mvn dependency:go-offline
 
-# Copiar el wallet
-COPY wallet /wallet
+# Copiar el código fuente y el wallet
+COPY src /app/src
+COPY wallet /app/wallet
 
 # Empaquetar la aplicación
 RUN mvn clean package -DskipTests
 
-# Encontrar el jar generado y moverlo a un nombre conocido
-RUN mv target/*.jar target/app.jar
+# Ejecutar la compilación
+RUN mvn clean package -DskipTests
 
-# Exponer puerto (ajustar según el servicio)
-EXPOSE 8082
 
-# Establecer la variable de entorno para el wallet
-ENV TNS_ADMIN=/wallet
+# ==========================
+# Fase 2: Runtime Stage
+# ==========================
+FROM eclipse-temurin:21-jdk
 
-# Comando para ejecutar la aplicación
-CMD ["java", "-jar", "target/app.jar"]
+WORKDIR /app
+
+# Copiar el archivo JAR generado
+COPY --from=buildstage /app/target/paciente-0.0.1-SNAPSHOT.jar /app/paciente.jar
+
+# Copiar el wallet para la conexión a Oracle
+COPY wallet /app/wallet
+
+# Exponer el puerto
+EXPOSE 8080
+
+# Ejecutar la aplicación
+ENTRYPOINT ["java", "-jar", "/app/paciente.jar"]
